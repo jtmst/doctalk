@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { signIn, useSession } from "next-auth/react";
 import { AuthButton } from "@/app/components/auth-button";
-import { FolderInput, saveRecentFolder } from "@/app/components/folder-input";
+import { FolderInput, loadRecentFolders, saveRecentFolder } from "@/app/components/folder-input";
 import { IngestionProgress } from "@/app/components/ingestion-progress";
 import { ChatInterface } from "@/app/components/chat-interface";
 import { Button } from "@/components/ui/button";
@@ -30,6 +30,13 @@ export default function Home() {
 
   const handleAlreadyIndexed = useCallback(
     (folderId: string, folderName: string) => {
+      const recent = loadRecentFolders().find((f) => f.folderId === folderId);
+      saveRecentFolder({
+        folderId,
+        folderName,
+        timestamp: Date.now(),
+        fileCount: recent?.fileCount ?? 0,
+      });
       setAppState({ step: "chat", folderId, folderName });
     },
     [],
