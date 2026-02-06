@@ -1,4 +1,4 @@
-import { SUPPORTED_MIME_TYPES, INGESTION_LIMITS, type SupportedMimeType } from "@/lib/config";
+import { SUPPORTED_MIME_TYPES, INGESTION_LIMITS } from "@/lib/config";
 import { IngestionError } from "@/lib/errors";
 import { createDriveClient, listFiles, exportFile, downloadFile, parseFile } from "@/lib/drive";
 import type { ExportFormat } from "@/lib/drive";
@@ -60,15 +60,14 @@ export async function ingestFolder(params: IngestParams): Promise<IngestResult> 
 
   for (const file of files) {
     try {
-      if (!(file.mimeType in SUPPORTED_MIME_TYPES)) {
+      const exportFormat = SUPPORTED_MIME_TYPES[file.mimeType as keyof typeof SUPPORTED_MIME_TYPES] as string | null | undefined;
+      if (exportFormat === undefined) {
         skipped++;
         onProgress({ type: "file_skipped", fileName: file.name, reason: `Unsupported file type (${file.mimeType})` });
         continue;
       }
 
-      const exportFormat = SUPPORTED_MIME_TYPES[file.mimeType as SupportedMimeType];
       let parseResult;
-
       if (typeof exportFormat === "string") {
         const text = await exportFile(client, file.id, exportFormat as ExportFormat);
         parseResult = await parseFile(text, file.mimeType, file.name);
