@@ -16,8 +16,8 @@ export async function POST(req: Request) {
     return Response.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  if (!body.folderId || typeof body.folderId !== "string") {
-    return Response.json({ error: "Missing folderId" }, { status: 400 });
+  if (!body.folderId || typeof body.folderId !== "string" || body.folderId.length > 128) {
+    return Response.json({ error: "Missing or invalid folderId" }, { status: 400 });
   }
 
   const folderId = body.folderId;

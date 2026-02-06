@@ -7,5 +7,5 @@ const openrouter = createOpenAI({
 });
 
 export function getChatModel() {
-  return openrouter(process.env.OPENROUTER_MODEL || DEFAULT_MODEL);
+  return openrouter.chat(process.env.OPENROUTER_MODEL || DEFAULT_MODEL);
 }

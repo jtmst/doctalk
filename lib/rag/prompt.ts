@@ -3,8 +3,8 @@ import type { SearchResult } from "@/lib/vectorstore";
 export function buildSystemPrompt(chunks: SearchResult[]): string {
   const sourceBlocks = chunks
     .map(
-      (chunk, i) =>
-        `[${i + 1}] ${chunk.metadata.fileName}\n${chunk.text}`,
+      (chunk) =>
+        `--- ${chunk.metadata.fileName} ---\n${chunk.text}`,
     )
     .join("\n\n");
 

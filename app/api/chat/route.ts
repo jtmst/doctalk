@@ -11,19 +11,37 @@ interface ChatMessage {
   content: string;
 }
 
+function extractTextFromParts(parts: unknown): string | null {
+  if (!Array.isArray(parts)) return null;
+  const texts: string[] = [];
+  for (const p of parts) {
+    if (
+      typeof p === "object" &&
+      p !== null &&
+      (p as Record<string, unknown>).type === "text" &&
+      typeof (p as Record<string, unknown>).text === "string"
+    ) {
+      texts.push((p as Record<string, unknown>).text as string);
+    }
+  }
+  return texts.length > 0 ? texts.join("") : null;
+}
+
 function sanitizeMessages(raw: unknown[]): ChatMessage[] | null {
   const messages: ChatMessage[] = [];
   for (const m of raw) {
     if (typeof m !== "object" || m === null) return null;
     const msg = m as Record<string, unknown>;
-    if (
-      typeof msg.role !== "string" ||
-      typeof msg.content !== "string" ||
-      !["user", "assistant"].includes(msg.role)
-    ) {
+    if (typeof msg.role !== "string" || !["user", "assistant"].includes(msg.role)) {
       return null;
     }
-    messages.push({ role: msg.role as "user" | "assistant", content: msg.content });
+
+    const content =
+      extractTextFromParts(msg.parts) ??
+      (typeof msg.content === "string" ? msg.content : null);
+    if (content === null) return null;
+
+    messages.push({ role: msg.role as "user" | "assistant", content });
   }
   return messages;
 }
@@ -41,7 +59,7 @@ export async function POST(req: Request) {
     return Response.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  if (!body.folderId || typeof body.folderId !== "string" || !Array.isArray(body.messages)) {
+  if (!body.folderId || typeof body.folderId !== "string" || body.folderId.length > 128 || !Array.isArray(body.messages)) {
     return Response.json({ error: "Missing folderId or messages" }, { status: 400 });
   }
 
@@ -70,7 +88,10 @@ export async function POST(req: Request) {
 
     const result = streamText({ model: getChatModel(), system, messages });
     return result.toUIMessageStreamResponse({
-      onError: () => "An error occurred while generating the response",
+      onError: (error) => {
+        console.error("[chat] stream error:", error);
+        return "An error occurred while generating the response";
+      },
     });
   } catch (error) {
     if (error instanceof DocTalkError) {

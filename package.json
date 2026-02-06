@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@ai-sdk/openai": "^3.0.25",
+    "@ai-sdk/react": "^3.0.75",
     "@upstash/vector": "^1.2.2",
     "ai": "^6.0.72",
     "class-variance-authority": "^0.7.1",
