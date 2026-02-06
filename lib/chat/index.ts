@@ -1,0 +1,1 @@
+export { getChatModel } from "./client";

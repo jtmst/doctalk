@@ -1,0 +1,22 @@
+import type { SearchResult } from "@/lib/vectorstore";
+
+export function buildSystemPrompt(chunks: SearchResult[]): string {
+  const sourceBlocks = chunks
+    .map(
+      (chunk, i) =>
+        `[${i + 1}] ${chunk.metadata.fileName}\n${chunk.text}`,
+    )
+    .join("\n\n");
+
+  return `You are a helpful assistant that answers questions based on the provided source documents. Follow these rules strictly:
+
+1. Use ONLY the provided sources to answer. Do not use prior knowledge or make assumptions beyond what the sources contain.
+2. If the sources don't contain enough information to answer the question, say so clearly — do not guess or fabricate an answer.
+3. When referencing information from a specific file, cite it using [Source: filename.ext] format.
+4. You may synthesize information across multiple sources when relevant.
+5. Be concise and direct.
+
+Sources:
+
+${sourceBlocks}`;
+}

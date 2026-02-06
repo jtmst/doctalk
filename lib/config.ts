@@ -31,4 +31,9 @@ export type SupportedMimeType = keyof typeof SUPPORTED_MIME_TYPES;
 
 export const RECENT_FOLDERS_MAX = 10;
 
-export const DEFAULT_MODEL = "openai/gpt-4o-mini";
+export const CHAT_LIMITS = {
+  maxMessages: 50,
+  maxMessageLength: 12_000, // ~3000 tokens per message
+} as const;
+
+export const DEFAULT_MODEL = "google/gemini-2.0-flash-001";
