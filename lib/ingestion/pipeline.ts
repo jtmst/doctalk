@@ -1,5 +1,5 @@
 import { SUPPORTED_MIME_TYPES, INGESTION_LIMITS } from "@/lib/config";
-import { IngestionError } from "@/lib/errors";
+import { IngestionError, ERROR_CODES } from "@/lib/errors";
 import { createDriveClient, listFiles, exportFile, downloadFile, parseFile, getFolderName } from "@/lib/drive";
 import type { ExportFormat } from "@/lib/drive";
 import { chunkDocument } from "./chunker";
@@ -40,7 +40,7 @@ export async function ingestFolder(params: IngestParams): Promise<IngestResult> 
   if (files.length > INGESTION_LIMITS.maxFiles) {
     throw new IngestionError(
       `This folder has too many files (${files.length}, limit is ${INGESTION_LIMITS.maxFiles})`,
-      "INGESTION_TOO_MANY_FILES",
+      ERROR_CODES.INGESTION_TOO_MANY_FILES,
     );
   }
 
@@ -50,7 +50,7 @@ export async function ingestFolder(params: IngestParams): Promise<IngestResult> 
     const limitMB = Math.round(INGESTION_LIMITS.maxAggregateSizeBytes / 1024 / 1024);
     throw new IngestionError(
       `This folder is too large (estimated ${sizeMB}MB, limit is ${limitMB}MB)`,
-      "INGESTION_FOLDER_TOO_LARGE",
+      ERROR_CODES.INGESTION_FOLDER_TOO_LARGE,
     );
   }
 

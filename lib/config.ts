@@ -30,6 +30,8 @@ export const SUPPORTED_MIME_TYPES = {
 
 export type SupportedMimeType = keyof typeof SUPPORTED_MIME_TYPES;
 
+export const MAX_FOLDER_ID_LENGTH = 128;
+
 export const RECENT_FOLDERS_MAX = 10;
 
 export const CHAT_LIMITS = {

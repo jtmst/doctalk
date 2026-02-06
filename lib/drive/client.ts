@@ -1,6 +1,6 @@
 import { google, type drive_v3 } from "googleapis";
 import { SUPPORTED_MIME_TYPES, INGESTION_LIMITS } from "@/lib/config";
-import { DriveError } from "@/lib/errors";
+import { DriveError, ERROR_CODES } from "@/lib/errors";
 import type { DriveFile, ExportFormat } from "./types";
 
 const FOLDER_ID_PATTERN = /^[a-zA-Z0-9_-]+$/;
@@ -16,7 +16,7 @@ export async function listFiles(
   folderId: string,
 ): Promise<DriveFile[]> {
   if (!FOLDER_ID_PATTERN.test(folderId)) {
-    throw new DriveError("Invalid folder ID format", "DRIVE_NOT_FOUND");
+    throw new DriveError("Invalid folder ID format", ERROR_CODES.DRIVE_NOT_FOUND);
   }
 
   const files: DriveFile[] = [];
@@ -55,21 +55,7 @@ export async function listFiles(
       pageToken = res.data.nextPageToken ?? undefined;
     } while (pageToken);
   } catch (error) {
-    if (isGoogleApiError(error)) {
-      if (error.code === 404) {
-        throw new DriveError(
-          "Folder not found — check the link and try again",
-          "DRIVE_NOT_FOUND",
-        );
-      }
-      if (error.code === 403) {
-        throw new DriveError(
-          "You don't have permission to access this folder",
-          "DRIVE_PERMISSION_DENIED",
-        );
-      }
-    }
-    throw new DriveError("Failed to list files in folder", "DRIVE_ERROR");
+    handleDriveError(error, "list files in folder");
   }
 
   return files;
@@ -87,15 +73,7 @@ export async function exportFile(
     });
     return String(res.data);
   } catch (error) {
-    if (isGoogleApiError(error)) {
-      if (error.code === 404) {
-        throw new DriveError("File not found — it may have been deleted", "DRIVE_NOT_FOUND");
-      }
-      if (error.code === 403) {
-        throw new DriveError("You don't have permission to export this file", "DRIVE_PERMISSION_DENIED");
-      }
-    }
-    throw new DriveError("Failed to export file", "DRIVE_ERROR");
+    handleDriveError(error, "export file");
   }
 }
 
@@ -110,15 +88,7 @@ export async function downloadFile(
     );
     return Buffer.from(res.data as ArrayBuffer);
   } catch (error) {
-    if (isGoogleApiError(error)) {
-      if (error.code === 404) {
-        throw new DriveError("File not found — it may have been deleted", "DRIVE_NOT_FOUND");
-      }
-      if (error.code === 403) {
-        throw new DriveError("You don't have permission to download this file", "DRIVE_PERMISSION_DENIED");
-      }
-    }
-    throw new DriveError("Failed to download file", "DRIVE_ERROR");
+    handleDriveError(error, "download file");
   }
 }
 
@@ -143,4 +113,16 @@ function isGoogleApiError(
     "code" in error &&
     typeof (error as { code: unknown }).code === "number"
   );
+}
+
+function handleDriveError(error: unknown, context: string): never {
+  if (isGoogleApiError(error)) {
+    if (error.code === 404) {
+      throw new DriveError(`Not found — failed to ${context}`, ERROR_CODES.DRIVE_NOT_FOUND);
+    }
+    if (error.code === 403) {
+      throw new DriveError(`Permission denied — failed to ${context}`, ERROR_CODES.DRIVE_PERMISSION_DENIED);
+    }
+  }
+  throw new DriveError(`Failed to ${context}`, ERROR_CODES.DRIVE_ERROR);
 }

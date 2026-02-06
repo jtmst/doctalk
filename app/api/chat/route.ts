@@ -1,10 +1,10 @@
 import { streamText } from "ai";
-import { getToken } from "@auth/core/jwt";
 import { getNamespaceKey } from "@/lib/vectorstore";
 import { retrieveContext, buildSystemPrompt } from "@/lib/rag";
 import { getChatModel } from "@/lib/chat";
 import { CHAT_LIMITS } from "@/lib/config";
 import { DocTalkError, errorToStatus, safeErrorMessage } from "@/lib/errors";
+import { requireToken, parseJsonBody, validateFolderId } from "@/lib/api/helpers";
 
 interface ChatMessage {
   role: "user" | "assistant";
@@ -15,13 +15,10 @@ function extractTextFromParts(parts: unknown): string | null {
   if (!Array.isArray(parts)) return null;
   const texts: string[] = [];
   for (const p of parts) {
-    if (
-      typeof p === "object" &&
-      p !== null &&
-      (p as Record<string, unknown>).type === "text" &&
-      typeof (p as Record<string, unknown>).text === "string"
-    ) {
-      texts.push((p as Record<string, unknown>).text as string);
+    if (typeof p !== "object" || p === null) continue;
+    const part = p as Record<string, unknown>;
+    if (part.type === "text" && typeof part.text === "string") {
+      texts.push(part.text);
     }
   }
   return texts.length > 0 ? texts.join("") : null;
@@ -47,27 +44,22 @@ function sanitizeMessages(raw: unknown[]): ChatMessage[] | null {
 }
 
 export async function POST(req: Request) {
-  const token = await getToken({ req, secret: process.env.AUTH_SECRET! });
-  if (!token?.id) {
-    return Response.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const tokenResult = await requireToken(req);
+  if (tokenResult instanceof Response) return tokenResult;
 
-  let body: { messages?: unknown; folderId?: string };
-  try {
-    body = await req.json();
-  } catch {
-    return Response.json({ error: "Invalid JSON body" }, { status: 400 });
-  }
+  const bodyResult = await parseJsonBody<{ messages?: unknown; folderId?: string }>(req);
+  if (bodyResult instanceof Response) return bodyResult;
 
-  if (!body.folderId || typeof body.folderId !== "string" || body.folderId.length > 128 || !Array.isArray(body.messages)) {
+  const folderId = validateFolderId(bodyResult.folderId);
+  if (!folderId || !Array.isArray(bodyResult.messages)) {
     return Response.json({ error: "Missing folderId or messages" }, { status: 400 });
   }
 
-  if (body.messages.length > CHAT_LIMITS.maxMessages) {
+  if (bodyResult.messages.length > CHAT_LIMITS.maxMessages) {
     return Response.json({ error: `Too many messages (limit: ${CHAT_LIMITS.maxMessages})` }, { status: 400 });
   }
 
-  const messages = sanitizeMessages(body.messages);
+  const messages = sanitizeMessages(bodyResult.messages);
   if (!messages) {
     return Response.json({ error: "Invalid message format" }, { status: 400 });
   }
@@ -82,7 +74,7 @@ export async function POST(req: Request) {
   }
 
   try {
-    const namespaceKey = getNamespaceKey(token.id, body.folderId);
+    const namespaceKey = getNamespaceKey(tokenResult.id, folderId);
     const chunks = await retrieveContext(namespaceKey, lastQuestion);
     const system = buildSystemPrompt(chunks);
 

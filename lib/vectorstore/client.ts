@@ -1,5 +1,5 @@
 import { Index } from "@upstash/vector";
-import { VectorStoreError } from "@/lib/errors";
+import { VectorStoreError, ERROR_CODES } from "@/lib/errors";
 import type { ChunkMetadata, ChunkWithMetadata, SearchResult } from "./types";
 
 const UPSERT_BATCH_SIZE = 100;
@@ -19,7 +19,7 @@ export function getNamespaceKey(userId: string, folderId: string): string {
   if (userId.includes(NAMESPACE_SEPARATOR) || folderId.includes(NAMESPACE_SEPARATOR)) {
     throw new VectorStoreError(
       "Invalid namespace key components",
-      "VECTOR_STORE_ERROR",
+      ERROR_CODES.VECTOR_STORE_ERROR,
     );
   }
   return `${userId}${NAMESPACE_SEPARATOR}${folderId}`;
@@ -43,10 +43,7 @@ export async function upsertChunks(
       );
     }
   } catch (error) {
-    throw new VectorStoreError(
-      `Failed to upsert chunks: ${error instanceof Error ? error.message : "Unknown error"}`,
-      "VECTOR_STORE_ERROR",
-    );
+    wrapVectorError(error, "upsert chunks");
   }
 }
 
@@ -75,10 +72,7 @@ export async function queryChunks(
         metadata: r.metadata as unknown as ChunkMetadata,
       }));
   } catch (error) {
-    throw new VectorStoreError(
-      `Failed to query vectors: ${error instanceof Error ? error.message : "Unknown error"}`,
-      "VECTOR_STORE_ERROR",
-    );
+    wrapVectorError(error, "query vectors");
   }
 }
 
@@ -90,10 +84,7 @@ export async function getNamespaceInfo(
     const nsInfo = info.namespaces[namespaceKey];
     return { vectorCount: nsInfo?.vectorCount ?? 0 };
   } catch (error) {
-    throw new VectorStoreError(
-      `Failed to get namespace info: ${error instanceof Error ? error.message : "Unknown error"}`,
-      "VECTOR_STORE_ERROR",
-    );
+    wrapVectorError(error, "get namespace info");
   }
 }
 
@@ -103,9 +94,11 @@ export async function deleteNamespace(
   try {
     await getIndex().deleteNamespace(namespaceKey);
   } catch (error) {
-    throw new VectorStoreError(
-      `Failed to delete namespace: ${error instanceof Error ? error.message : "Unknown error"}`,
-      "VECTOR_STORE_ERROR",
-    );
+    wrapVectorError(error, "delete namespace");
   }
+}
+
+function wrapVectorError(error: unknown, action: string): never {
+  const detail = error instanceof Error ? error.message : "Unknown error";
+  throw new VectorStoreError(`Failed to ${action}: ${detail}`, ERROR_CODES.VECTOR_STORE_ERROR);
 }

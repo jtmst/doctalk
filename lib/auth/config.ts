@@ -23,6 +23,13 @@ declare module "@auth/core/jwt" {
   }
 }
 
+interface GoogleTokenResponse {
+  access_token: string;
+  expires_in: number;
+  refresh_token?: string;
+  error?: string;
+}
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [
     Google({
@@ -69,7 +76,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           }),
         });
 
-        const refreshed = await response.json();
+        const refreshed: GoogleTokenResponse = await response.json();
 
         if (!response.ok) {
           throw new Error(refreshed.error ?? "Token refresh failed");

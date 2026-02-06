@@ -1,34 +1,30 @@
-import { getToken } from "@auth/core/jwt";
 import { getNamespaceKey, getNamespaceInfo } from "@/lib/vectorstore";
 import { ingestFolder, type IngestionEvent } from "@/lib/ingestion";
 import { createDriveClient, getFolderName } from "@/lib/drive";
 import { DocTalkError, errorToStatus, safeErrorMessage } from "@/lib/errors";
+import { requireToken, parseJsonBody, validateFolderId } from "@/lib/api/helpers";
 
 export async function POST(req: Request) {
-  const token = await getToken({ req, secret: process.env.AUTH_SECRET! });
-  if (!token?.id || !token?.accessToken) {
+  const tokenResult = await requireToken(req);
+  if (tokenResult instanceof Response) return tokenResult;
+  if (!tokenResult.accessToken) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  let body: { folderId?: string };
-  try {
-    body = await req.json();
-  } catch {
-    return Response.json({ error: "Invalid JSON body" }, { status: 400 });
-  }
+  const bodyResult = await parseJsonBody<{ folderId?: string }>(req);
+  if (bodyResult instanceof Response) return bodyResult;
 
-  if (!body.folderId || typeof body.folderId !== "string" || body.folderId.length > 128) {
+  const folderId = validateFolderId(bodyResult.folderId);
+  if (!folderId) {
     return Response.json({ error: "Missing or invalid folderId" }, { status: 400 });
   }
 
-  const folderId = body.folderId;
-
   let namespaceKey: string;
   try {
-    namespaceKey = getNamespaceKey(token.id, folderId);
+    namespaceKey = getNamespaceKey(tokenResult.id, folderId);
     const { vectorCount } = await getNamespaceInfo(namespaceKey);
     if (vectorCount > 0) {
-      const client = createDriveClient(token.accessToken);
+      const client = createDriveClient(tokenResult.accessToken);
       const folderName = await getFolderName(client, folderId);
       return Response.json({ status: "already_indexed", vectorCount, folderName });
     }
@@ -48,7 +44,7 @@ export async function POST(req: Request) {
       };
 
       try {
-        await ingestFolder({ folderId, accessToken: token.accessToken, namespaceKey, onProgress: send });
+        await ingestFolder({ folderId, accessToken: tokenResult.accessToken!, namespaceKey, onProgress: send });
       } catch (error) {
         console.error("[ingest] pipeline error:", error);
         const message = error instanceof DocTalkError

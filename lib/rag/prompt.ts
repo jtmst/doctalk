@@ -1,5 +1,9 @@
 import type { SearchResult } from "@/lib/vectorstore";
 
+function escapeXml(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
 export function buildSystemPrompt(chunks: SearchResult[]): string {
   const sourceBlocks = chunks
     .map((chunk) => {
@@ -7,7 +11,7 @@ export function buildSystemPrompt(chunks: SearchResult[]): string {
       const name = pages?.length
         ? `${chunk.metadata.fileName} (p.${pages.join(", ")})`
         : chunk.metadata.fileName;
-      return `<source name="${name}">\n${chunk.text}\n</source>`;
+      return `<source name="${escapeXml(name)}">\n${escapeXml(chunk.text)}\n</source>`;
     })
     .join("\n");
 

@@ -2,14 +2,13 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { parseFolderUrl } from "@/lib/drive/url";
-import { RECENT_FOLDERS_MAX } from "@/lib/config";
+import { RECENT_FOLDERS_MAX, MAX_FOLDER_ID_LENGTH } from "@/lib/config";
 import { FolderOpen, Clock, Info, Loader2, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const STORAGE_KEY = "doctalk:recent-folders";
-const MAX_FOLDER_ID_LENGTH = 128;
 
 export interface RecentFolder {
   folderId: string;
