@@ -164,4 +164,31 @@ describe("chunkDocument", () => {
     const result = chunkDocument("", metadata);
     expect(result).toEqual([]);
   });
+
+  it("assigns page numbers from page offsets", () => {
+    const text = "Page one content.\n\nPage two content.";
+    const pageOffsets = [
+      { pageNumber: 1, startOffset: 0 },
+      { pageNumber: 2, startOffset: 19 },
+    ];
+    const splitter = new RecursiveTextSplitter({ chunkSize: 500, chunkOverlap: 0 });
+    const result = chunkDocument(text, metadata, { splitter, pageOffsets });
+
+    expect(result).toHaveLength(1);
+    expect(result[0].metadata.pageNumbers).toEqual([1, 2]);
+  });
+
+  it("assigns correct pages when chunks split across page boundaries", () => {
+    const text = "AAA.\n\nBBB.\n\nCCC.";
+    const pageOffsets = [
+      { pageNumber: 1, startOffset: 0 },
+      { pageNumber: 2, startOffset: 6 },
+      { pageNumber: 3, startOffset: 12 },
+    ];
+    const splitter = new RecursiveTextSplitter({ chunkSize: 8, chunkOverlap: 0 });
+    const result = chunkDocument(text, metadata, { splitter, pageOffsets });
+
+    expect(result.length).toBeGreaterThan(1);
+    expect(result[0].metadata.pageNumbers).toEqual([1]);
+  });
 });

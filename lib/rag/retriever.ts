@@ -11,7 +11,7 @@ export async function retrieveContext(
   return rerank(results, RETRIEVAL.rerankTopK);
 }
 
-function rerank(results: SearchResult[], limit: number): SearchResult[] {
+export function rerank(results: SearchResult[], limit: number): SearchResult[] {
   const sorted = [...results].sort((a, b) => b.score - a.score);
   const kept: SearchResult[] = [];
 
