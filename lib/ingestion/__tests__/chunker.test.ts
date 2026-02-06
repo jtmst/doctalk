@@ -138,7 +138,7 @@ describe("chunkDocument", () => {
       chunkOverlap: 0,
     });
     const text = "Chunk one.\n\nChunk two.\n\nChunk three.";
-    const result = chunkDocument(text, metadata, splitter);
+    const result = chunkDocument(text, metadata, { splitter });
 
     expect(result.length).toBe(3);
     result.forEach((chunk, i) => {
@@ -153,7 +153,7 @@ describe("chunkDocument", () => {
       chunkOverlap: 0,
     });
     const text = "Alpha.\n\nBeta.";
-    const result = chunkDocument(text, metadata, splitter);
+    const result = chunkDocument(text, metadata, { splitter });
 
     expect(result.length).toBe(2);
     expect(result[0].id).toBe("file-123:0");

@@ -36,4 +36,6 @@ export const CHAT_LIMITS = {
   maxMessageLength: 12_000, // ~3000 tokens per message
 } as const;
 
+export const CITATION_SNIPPET_LENGTH = 180;
+
 export const DEFAULT_MODEL = "google/gemini-2.0-flash-001";

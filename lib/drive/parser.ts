@@ -43,7 +43,10 @@ async function parsePdf(
   try {
     parser = new PDFParse({ data });
     const result = await parser.getText();
-    const text = result.text.trim();
+
+    const separator = "\n\n";
+    const pages = result.pages;
+    const text = pages.map((p) => p.text).join(separator).trim();
 
     if (!text) {
       return {
@@ -53,7 +56,14 @@ async function parsePdf(
       };
     }
 
-    return { text, skipped: false };
+    const pageOffsets: Array<{ pageNumber: number; startOffset: number }> = [];
+    let offset = 0;
+    for (const page of pages) {
+      pageOffsets.push({ pageNumber: page.num, startOffset: offset });
+      offset += page.text.length + separator.length;
+    }
+
+    return { text, skipped: false, pageOffsets };
   } catch {
     return {
       text: "",

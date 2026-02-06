@@ -1,10 +1,11 @@
 "use client";
 
-import { FileText } from "lucide-react";
+import { useState } from "react";
+import { FileText, ChevronDown } from "lucide-react";
+import type { Citation } from "@/lib/rag/citations";
 
 interface CitationLinkProps {
-  fileName: string;
-  fileUrl?: string;
+  citation: Citation;
 }
 
 function isSafeUrl(url: string): boolean {
@@ -16,32 +17,63 @@ function isSafeUrl(url: string): boolean {
   }
 }
 
-export function CitationLink({ fileName, fileUrl }: CitationLinkProps) {
-  const content = (
-    <>
+function buildUrl(citation: Citation): string | undefined {
+  if (!citation.fileUrl || !isSafeUrl(citation.fileUrl)) return undefined;
+  if (citation.mimeType === "application/pdf" && citation.pageNumber) {
+    return `${citation.fileUrl}#page=${citation.pageNumber}`;
+  }
+  return citation.fileUrl;
+}
+
+export function CitationLink({ citation }: CitationLinkProps) {
+  const [expanded, setExpanded] = useState(false);
+  const url = buildUrl(citation);
+
+  const pill = (
+    <span className="inline-flex items-center gap-1.5">
       <FileText className="size-3" />
-      <span>{fileName}</span>
-    </>
+      <span>{citation.fileName}</span>
+      {citation.snippet && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setExpanded((v) => !v);
+          }}
+          className="inline-flex items-center"
+        >
+          <ChevronDown
+            className={`size-3 transition-transform ${expanded ? "rotate-180" : ""}`}
+          />
+        </button>
+      )}
+    </span>
   );
 
-  const safeUrl = fileUrl && isSafeUrl(fileUrl) ? fileUrl : undefined;
-
-  if (safeUrl) {
-    return (
-      <a
-        href={safeUrl}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="inline-flex items-center gap-1.5 rounded-full bg-secondary px-2.5 py-1 text-xs text-secondary-foreground hover:bg-secondary/80 transition-colors"
-      >
-        {content}
-      </a>
-    );
-  }
+  const pillClass =
+    "inline-flex items-center gap-1.5 rounded-full bg-secondary px-2.5 py-1 text-xs transition-colors";
 
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary px-2.5 py-1 text-xs text-muted-foreground">
-      {content}
-    </span>
+    <div>
+      {url ? (
+        <a
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={`${pillClass} text-secondary-foreground hover:bg-secondary/80`}
+        >
+          {pill}
+        </a>
+      ) : (
+        <span className={`${pillClass} text-muted-foreground`}>{pill}</span>
+      )}
+
+      {expanded && citation.snippet && (
+        <p className="text-xs text-muted-foreground bg-muted/50 rounded px-2.5 py-1.5 mt-1">
+          {citation.snippet}
+        </p>
+      )}
+    </div>
   );
 }

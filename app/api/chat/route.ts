@@ -86,8 +86,19 @@ export async function POST(req: Request) {
     const chunks = await retrieveContext(namespaceKey, lastQuestion);
     const system = buildSystemPrompt(chunks);
 
+    const sources = chunks.map((c) => ({
+      fileName: c.metadata.fileName,
+      fileUrl: c.metadata.fileUrl,
+      mimeType: c.metadata.mimeType,
+      text: c.text,
+      pageNumber: c.metadata.pageNumber,
+    }));
+
     const result = streamText({ model: getChatModel(), system, messages });
     return result.toUIMessageStreamResponse({
+      messageMetadata: ({ part }) => {
+        if (part.type === "start") return { sources };
+      },
       onError: (error) => {
         console.error("[chat] stream error:", error);
         return "An error occurred while generating the response";

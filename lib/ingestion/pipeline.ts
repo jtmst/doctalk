@@ -85,13 +85,17 @@ export async function ingestFolder(params: IngestParams): Promise<IngestResult> 
         continue;
       }
 
-      const chunks = chunkDocument(parseResult.text, {
-        fileId: file.id,
-        fileName: file.name,
-        fileUrl: file.webViewLink,
-        mimeType: file.mimeType,
-        folderId,
-      });
+      const chunks = chunkDocument(
+        parseResult.text,
+        {
+          fileId: file.id,
+          fileName: file.name,
+          fileUrl: file.webViewLink,
+          mimeType: file.mimeType,
+          folderId,
+        },
+        { pageOffsets: parseResult.pageOffsets },
+      );
 
       await upsertChunks(namespaceKey, chunks);
 

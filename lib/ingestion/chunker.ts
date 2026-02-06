@@ -92,27 +92,64 @@ export class RecursiveTextSplitter {
   }
 }
 
-type DocumentMetadata = Omit<ChunkMetadata, "chunkIndex" | "totalChunks">;
+type PageOffset = { pageNumber: number; startOffset: number };
+type DocumentMetadata = Omit<ChunkMetadata, "chunkIndex" | "totalChunks" | "pageNumber">;
+
+interface ChunkOptions {
+  splitter?: RecursiveTextSplitter;
+  pageOffsets?: PageOffset[];
+}
 
 export function chunkDocument(
   text: string,
   metadata: DocumentMetadata,
-  splitter?: RecursiveTextSplitter,
+  options?: ChunkOptions,
 ): ChunkWithMetadata[] {
-  const s = splitter ?? new RecursiveTextSplitter();
+  const s = options?.splitter ?? new RecursiveTextSplitter();
   const chunks = s.split(text);
+  const offsets = options?.pageOffsets;
 
-  return chunks.map((chunk, index): ChunkWithMetadata => ({
-    id: `${metadata.fileId}:${index}`,
-    text: chunk,
-    metadata: {
-      fileId: metadata.fileId,
-      fileName: metadata.fileName,
-      fileUrl: metadata.fileUrl,
-      mimeType: metadata.mimeType,
-      folderId: metadata.folderId,
-      chunkIndex: index,
-      totalChunks: chunks.length,
-    },
-  }));
+  let searchFrom = 0;
+
+  return chunks.map((chunk, index): ChunkWithMetadata => {
+    let pageNumber: number | undefined;
+
+    if (offsets && offsets.length > 0) {
+      const prefix = chunk.slice(0, 100);
+      const pos = text.indexOf(prefix, searchFrom);
+      if (pos !== -1) {
+        searchFrom = pos + 1;
+        pageNumber = lookupPage(offsets, pos);
+      }
+    }
+
+    return {
+      id: `${metadata.fileId}:${index}`,
+      text: chunk,
+      metadata: {
+        fileId: metadata.fileId,
+        fileName: metadata.fileName,
+        fileUrl: metadata.fileUrl,
+        mimeType: metadata.mimeType,
+        folderId: metadata.folderId,
+        chunkIndex: index,
+        totalChunks: chunks.length,
+        pageNumber,
+      },
+    };
+  });
+}
+
+function lookupPage(offsets: PageOffset[], position: number): number {
+  let lo = 0;
+  let hi = offsets.length - 1;
+  while (lo <= hi) {
+    const mid = (lo + hi) >>> 1;
+    if (offsets[mid].startOffset <= position) {
+      lo = mid + 1;
+    } else {
+      hi = mid - 1;
+    }
+  }
+  return offsets[hi >= 0 ? hi : 0].pageNumber;
 }

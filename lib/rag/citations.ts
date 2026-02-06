@@ -1,8 +1,19 @@
-import type { ChunkMetadata } from "@/lib/vectorstore";
+import { CITATION_SNIPPET_LENGTH } from "@/lib/config";
 
 export interface Citation {
   fileName: string;
   fileUrl: string;
+  snippet: string;
+  mimeType: string;
+  pageNumber?: number;
+}
+
+export interface SourceMeta {
+  fileName: string;
+  fileUrl: string;
+  mimeType: string;
+  text: string;
+  pageNumber?: number;
 }
 
 export function parseCitations(text: string): string[] {
@@ -15,17 +26,28 @@ export function parseCitations(text: string): string[] {
 
 export function mapCitationsToUrls(
   fileNames: string[],
-  chunkMetadata: ChunkMetadata[],
+  sources: SourceMeta[],
 ): Citation[] {
-  const urlMap = new Map<string, string>();
-  for (const meta of chunkMetadata) {
-    if (!urlMap.has(meta.fileName)) {
-      urlMap.set(meta.fileName, meta.fileUrl);
+  const sourceMap = new Map<string, SourceMeta>();
+  for (const src of sources) {
+    if (!sourceMap.has(src.fileName)) {
+      sourceMap.set(src.fileName, src);
     }
   }
 
   return fileNames.flatMap((name) => {
-    const url = urlMap.get(name);
-    return url ? [{ fileName: name, fileUrl: url }] : [];
+    const src = sourceMap.get(name);
+    if (!src) return [];
+    const snippet =
+      src.text.length > CITATION_SNIPPET_LENGTH
+        ? src.text.slice(0, CITATION_SNIPPET_LENGTH) + "…"
+        : src.text;
+    return [{
+      fileName: name,
+      fileUrl: src.fileUrl,
+      snippet,
+      mimeType: src.mimeType,
+      pageNumber: src.pageNumber,
+    }];
   });
 }

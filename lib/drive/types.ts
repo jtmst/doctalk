@@ -17,4 +17,5 @@ export interface ParseResult {
   text: string;
   skipped: boolean;
   reason?: string;
+  pageOffsets?: Array<{ pageNumber: number; startOffset: number }>;
 }
