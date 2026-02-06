@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 
 interface IngestionProgressProps {
   folderId: string;
-  onComplete: (result: { filesProcessed: number; chunksCreated: number }) => void;
+  onComplete: (result: { filesProcessed: number; chunksCreated: number; folderName: string }) => void;
   onError: (message: string) => void;
 }
 
@@ -16,6 +16,7 @@ interface ProgressState {
   filesProcessed: number;
   currentFile: string;
   chunksCreated: number;
+  folderName: string;
   skipped: { fileName: string; reason: string }[];
   errors: { fileName: string; error: string }[];
   status: "connecting" | "ingesting" | "complete" | "error";
@@ -32,6 +33,7 @@ export function IngestionProgress({
     filesProcessed: 0,
     currentFile: "",
     chunksCreated: 0,
+    folderName: "",
     skipped: [],
     errors: [],
     status: "connecting",
@@ -60,7 +62,7 @@ export function IngestionProgress({
             return;
           }
           if (data.status === "already_indexed") {
-            onComplete({ filesProcessed: 0, chunksCreated: data.vectorCount ?? 0 });
+            onComplete({ filesProcessed: 0, chunksCreated: data.vectorCount ?? 0, folderName: data.folderName ?? folderId });
             return;
           }
         }
@@ -106,6 +108,7 @@ export function IngestionProgress({
           setState((s) => ({
             ...s,
             totalFiles: event.totalFiles,
+            folderName: event.folderName,
             status: "ingesting",
           }));
           break;
@@ -134,6 +137,7 @@ export function IngestionProgress({
           onComplete({
             filesProcessed: event.filesProcessed,
             chunksCreated: event.chunksCreated,
+            folderName: event.folderName,
           });
           break;
         case "error":

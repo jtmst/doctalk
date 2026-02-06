@@ -36,18 +36,19 @@ export default function Home() {
   );
 
   const handleIngestionComplete = useCallback(
-    (result: { filesProcessed: number; chunksCreated: number }) => {
+    (result: { filesProcessed: number; chunksCreated: number; folderName: string }) => {
       const current = appStateRef.current;
       if (current.step !== "ingesting") return;
       const { folderId } = current;
+      const { folderName } = result;
       saveRecentFolder({
         folderId,
-        folderName: folderId,
+        folderName,
         timestamp: Date.now(),
         fileCount: result.filesProcessed,
       });
       setTimeout(() => {
-        setAppState({ step: "chat", folderId, folderName: folderId });
+        setAppState({ step: "chat", folderId, folderName });
       }, 800);
     },
     [],

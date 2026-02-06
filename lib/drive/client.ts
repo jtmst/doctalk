@@ -122,6 +122,18 @@ export async function downloadFile(
   }
 }
 
+export async function getFolderName(
+  client: drive_v3.Drive,
+  folderId: string,
+): Promise<string> {
+  try {
+    const res = await client.files.get({ fileId: folderId, fields: "name" });
+    return res.data.name ?? folderId;
+  } catch {
+    return folderId;
+  }
+}
+
 function isGoogleApiError(
   error: unknown,
 ): error is { code: number } {

@@ -1,16 +1,16 @@
 import { SUPPORTED_MIME_TYPES, INGESTION_LIMITS } from "@/lib/config";
 import { IngestionError } from "@/lib/errors";
-import { createDriveClient, listFiles, exportFile, downloadFile, parseFile } from "@/lib/drive";
+import { createDriveClient, listFiles, exportFile, downloadFile, parseFile, getFolderName } from "@/lib/drive";
 import type { ExportFormat } from "@/lib/drive";
 import { chunkDocument } from "./chunker";
 import { upsertChunks } from "@/lib/vectorstore";
 
 export type IngestionEvent =
-  | { type: "started"; totalFiles: number }
+  | { type: "started"; totalFiles: number; folderName: string }
   | { type: "progress"; filesProcessed: number; totalFiles: number; currentFile: string; chunksCreated: number }
   | { type: "file_skipped"; fileName: string; reason: string }
   | { type: "file_error"; fileName: string; error: string }
-  | { type: "complete"; totalFiles: number; filesProcessed: number; chunksCreated: number; skipped: number; errors: number }
+  | { type: "complete"; totalFiles: number; filesProcessed: number; chunksCreated: number; skipped: number; errors: number; folderName: string }
   | { type: "error"; message: string };
 
 interface IngestParams {
@@ -32,7 +32,10 @@ export async function ingestFolder(params: IngestParams): Promise<IngestResult> 
   const { folderId, accessToken, namespaceKey, onProgress } = params;
 
   const client = createDriveClient(accessToken);
-  const files = await listFiles(client, folderId);
+  const [files, folderName] = await Promise.all([
+    listFiles(client, folderId),
+    getFolderName(client, folderId),
+  ]);
 
   if (files.length > INGESTION_LIMITS.maxFiles) {
     throw new IngestionError(
@@ -51,7 +54,7 @@ export async function ingestFolder(params: IngestParams): Promise<IngestResult> 
     );
   }
 
-  onProgress({ type: "started", totalFiles: files.length });
+  onProgress({ type: "started", totalFiles: files.length, folderName });
 
   let filesProcessed = 0;
   let chunksCreated = 0;
@@ -120,6 +123,7 @@ export async function ingestFolder(params: IngestParams): Promise<IngestResult> 
     chunksCreated: result.chunksCreated,
     skipped: result.skipped,
     errors: result.errors,
+    folderName,
   });
 
   return result;

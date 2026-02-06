@@ -113,8 +113,7 @@ export function FolderInput({
             return;
           }
           if (data.status === "already_indexed") {
-            const recent = loadRecentFolders().find((f) => f.folderId === id);
-            onAlreadyIndexed(id, recent?.folderName ?? id);
+            onAlreadyIndexed(id, data.folderName ?? id);
             return;
           }
         }

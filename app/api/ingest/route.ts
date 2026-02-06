@@ -1,6 +1,7 @@
 import { getToken } from "@auth/core/jwt";
 import { getNamespaceKey, getNamespaceInfo } from "@/lib/vectorstore";
 import { ingestFolder, type IngestionEvent } from "@/lib/ingestion";
+import { createDriveClient, getFolderName } from "@/lib/drive";
 import { DocTalkError, errorToStatus } from "@/lib/errors";
 
 export async function POST(req: Request) {
@@ -27,7 +28,9 @@ export async function POST(req: Request) {
     namespaceKey = getNamespaceKey(token.id, folderId);
     const { vectorCount } = await getNamespaceInfo(namespaceKey);
     if (vectorCount > 0) {
-      return Response.json({ status: "already_indexed", vectorCount });
+      const client = createDriveClient(token.accessToken);
+      const folderName = await getFolderName(client, folderId);
+      return Response.json({ status: "already_indexed", vectorCount, folderName });
     }
   } catch (error) {
     if (error instanceof DocTalkError) {
