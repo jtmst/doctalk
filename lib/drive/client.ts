@@ -11,6 +11,8 @@ export function createDriveClient(accessToken: string): drive_v3.Drive {
   return google.drive({ version: "v3", auth });
 }
 
+const FOLDER_MIME = "application/vnd.google-apps.folder";
+
 export async function listFiles(
   client: drive_v3.Drive,
   folderId: string,
@@ -20,40 +22,50 @@ export async function listFiles(
   }
 
   const files: DriveFile[] = [];
-  let pageToken: string | undefined;
+  const folderQueue = [folderId];
 
   try {
-    do {
-      const res = await client.files.list({
-        q: `'${folderId}' in parents and trashed = false`,
-        fields: "nextPageToken, files(id, name, mimeType, size, webViewLink)",
-        pageSize: 100,
-        pageToken,
-      });
+    while (folderQueue.length > 0) {
+      const currentFolder = folderQueue.shift()!;
+      let pageToken: string | undefined;
 
-      for (const f of res.data.files ?? []) {
-        if (!f.id || !f.name || !f.mimeType) continue;
-
-        const isSupportedMime = f.mimeType in SUPPORTED_MIME_TYPES;
-        const isWorkspaceFile = f.mimeType.startsWith(
-          "application/vnd.google-apps.",
-        );
-
-        files.push({
-          id: f.id,
-          name: f.name,
-          mimeType: f.mimeType,
-          size: isSupportedMime && isWorkspaceFile
-            ? INGESTION_LIMITS.estimatedWorkspaceFileSizeBytes
-            : f.size
-              ? Number(f.size)
-              : null,
-          webViewLink: f.webViewLink ?? `https://drive.google.com/file/d/${f.id}/view`,
+      do {
+        const res = await client.files.list({
+          q: `'${currentFolder}' in parents and trashed = false`,
+          fields: "nextPageToken, files(id, name, mimeType, size, webViewLink)",
+          pageSize: 100,
+          pageToken,
         });
-      }
 
-      pageToken = res.data.nextPageToken ?? undefined;
-    } while (pageToken);
+        for (const f of res.data.files ?? []) {
+          if (!f.id || !f.name || !f.mimeType) continue;
+
+          if (f.mimeType === FOLDER_MIME) {
+            folderQueue.push(f.id);
+            continue;
+          }
+
+          const isSupportedMime = f.mimeType in SUPPORTED_MIME_TYPES;
+          const isWorkspaceFile = f.mimeType.startsWith(
+            "application/vnd.google-apps.",
+          );
+
+          files.push({
+            id: f.id,
+            name: f.name,
+            mimeType: f.mimeType,
+            size: isSupportedMime && isWorkspaceFile
+              ? INGESTION_LIMITS.estimatedWorkspaceFileSizeBytes
+              : f.size
+                ? Number(f.size)
+                : null,
+            webViewLink: f.webViewLink ?? `https://drive.google.com/file/d/${f.id}/view`,
+          });
+        }
+
+        pageToken = res.data.nextPageToken ?? undefined;
+      } while (pageToken);
+    }
   } catch (error) {
     handleDriveError(error, "list files in folder");
   }

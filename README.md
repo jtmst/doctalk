@@ -11,6 +11,7 @@ DocTalk lets you sign in with Google, paste a Drive folder link, and have a conv
 - Real-time ingestion progress via SSE streaming
 - RAG chat with source citations and page numbers
 - Recent folders stored in localStorage for quick access
+- Recursive subfolder traversal
 - Re-index support to refresh stale folder contents
 
 ## Tech Stack
@@ -108,6 +109,6 @@ components/ui/         # shadcn/ui primitives (Button, Card, Dialog, etc.)
 
 ## How It Works
 
-**Ingestion:** When a user pastes a Drive folder URL, the server lists all supported files in that folder via the Google Drive API, then processes each one — exporting Google Workspace files to plain text, downloading PDFs and parsing them page-by-page. The extracted text is split into overlapping chunks with page number attribution, then upserted into Upstash Vector under a namespace scoped to the user and folder. Progress events stream back to the client via SSE in real time.
+**Ingestion:** When a user pastes a Drive folder URL, the server recursively lists all supported files in the folder and its subfolders via the Google Drive API, then processes each one — exporting Google Workspace files to plain text, downloading PDFs and parsing them page-by-page. The extracted text is split into overlapping chunks with page number attribution, then upserted into Upstash Vector under a namespace scoped to the user and folder. Progress events stream back to the client via SSE in real time.
 
 **Chat:** User messages are sent to the chat endpoint, which embeds the query, retrieves the most relevant chunks from the vector store, deduplicates adjacent overlapping chunks, and builds a system prompt with the retrieved context. The LLM generates a response that can include source citations, which are parsed and mapped back to original file names and page numbers for display in the UI.
