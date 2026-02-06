@@ -21,6 +21,7 @@ export function ChatInterface({
 }: ChatInterfaceProps) {
   const [input, setInput] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const transport = useMemo(
     () => new DefaultChatTransport({ api: "/api/chat", body: { folderId } }),
@@ -43,6 +44,7 @@ export function ChatInterface({
     const text = input.trim();
     if (!text || isActive) return;
     setInput("");
+    inputRef.current?.focus();
     await sendMessage({ text });
   };
 
@@ -84,12 +86,12 @@ export function ChatInterface({
           className="mx-auto flex max-w-2xl items-center gap-2"
         >
           <input
+            ref={inputRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Ask about your documents..."
             maxLength={CHAT_LIMITS.maxMessageLength}
             className="flex-1 rounded-lg border bg-secondary/50 px-4 py-2.5 text-sm outline-none placeholder:text-muted-foreground focus:border-ring focus:ring-1 focus:ring-ring"
-            disabled={isActive}
           />
           {isActive ? (
             <Button
