@@ -4,7 +4,8 @@ import { MAX_FOLDER_ID_LENGTH } from "@/lib/config";
 type TokenResult = { id: string; accessToken?: string };
 
 export async function requireToken(req: Request): Promise<TokenResult | Response> {
-  const token = await getToken({ req, secret: process.env.AUTH_SECRET! });
+  const secureCookie = process.env.AUTH_URL?.startsWith("https://") ?? false;
+  const token = await getToken({ req, secret: process.env.AUTH_SECRET!, secureCookie });
   if (!token?.id) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
