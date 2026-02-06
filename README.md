@@ -4,6 +4,8 @@ Chat with the contents of any Google Drive folder.
 
 DocTalk lets you sign in with Google, paste a Drive folder link, and have a conversation grounded in the actual contents of that folder. It ingests PDFs, Google Docs, Sheets, Slides, and plain text files, then provides RAG-powered chat with source citations and page numbers.
 
+<img width="706" height="625" alt="image" src="https://github.com/user-attachments/assets/2be94f27-8b78-4e55-a8e4-1a39a728b93d" />
+
 ## Features
 
 - Google OAuth sign-in with Drive read-only access
