@@ -4,7 +4,7 @@ import { getNamespaceKey } from "@/lib/vectorstore";
 import { retrieveContext, buildSystemPrompt } from "@/lib/rag";
 import { getChatModel } from "@/lib/chat";
 import { CHAT_LIMITS } from "@/lib/config";
-import { DocTalkError, errorToStatus } from "@/lib/errors";
+import { DocTalkError, errorToStatus, safeErrorMessage } from "@/lib/errors";
 
 interface ChatMessage {
   role: "user" | "assistant";
@@ -105,8 +105,9 @@ export async function POST(req: Request) {
       },
     });
   } catch (error) {
+    console.error("[chat] error:", error);
     if (error instanceof DocTalkError) {
-      return Response.json({ error: error.message }, { status: errorToStatus(error) });
+      return Response.json({ error: safeErrorMessage(error) }, { status: errorToStatus(error) });
     }
     return Response.json({ error: "An unexpected error occurred" }, { status: 500 });
   }

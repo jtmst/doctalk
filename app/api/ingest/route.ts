@@ -2,7 +2,7 @@ import { getToken } from "@auth/core/jwt";
 import { getNamespaceKey, getNamespaceInfo } from "@/lib/vectorstore";
 import { ingestFolder, type IngestionEvent } from "@/lib/ingestion";
 import { createDriveClient, getFolderName } from "@/lib/drive";
-import { DocTalkError, errorToStatus } from "@/lib/errors";
+import { DocTalkError, errorToStatus, safeErrorMessage } from "@/lib/errors";
 
 export async function POST(req: Request) {
   const token = await getToken({ req, secret: process.env.AUTH_SECRET! });
@@ -34,8 +34,9 @@ export async function POST(req: Request) {
     }
   } catch (error) {
     if (error instanceof DocTalkError) {
-      return Response.json({ error: error.message }, { status: errorToStatus(error) });
+      return Response.json({ error: safeErrorMessage(error) }, { status: errorToStatus(error) });
     }
+    console.error("[ingest] namespace check failed:", error);
     return Response.json({ error: "Failed to check index status" }, { status: 500 });
   }
 
@@ -49,8 +50,9 @@ export async function POST(req: Request) {
       try {
         await ingestFolder({ folderId, accessToken: token.accessToken, namespaceKey, onProgress: send });
       } catch (error) {
+        console.error("[ingest] pipeline error:", error);
         const message = error instanceof DocTalkError
-          ? error.message
+          ? safeErrorMessage(error)
           : "An unexpected error occurred during ingestion";
         send({ type: "error", message });
       } finally {

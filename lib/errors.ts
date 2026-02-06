@@ -36,6 +36,21 @@ export class VectorStoreError extends DocTalkError {
   }
 }
 
+const SAFE_MESSAGES: Record<string, string> = {
+  AUTH_ERROR: "Authentication failed",
+  TOKEN_EXPIRED: "Session expired — please sign in again",
+  REFRESH_FAILED: "Session expired — please sign in again",
+  DRIVE_NOT_FOUND: "Folder not found or inaccessible",
+  DRIVE_PERMISSION_DENIED: "You don't have access to this folder",
+  DRIVE_ERROR: "Something went wrong accessing Google Drive",
+  VECTOR_STORE_ERROR: "Something went wrong — please try again",
+  INGESTION_ERROR: "Something went wrong during ingestion",
+};
+
+export function safeErrorMessage(error: DocTalkError): string {
+  return SAFE_MESSAGES[error.code] ?? error.message;
+}
+
 export function errorToStatus(error: DocTalkError): number {
   const statusMap: Record<string, number> = {
     AUTH_ERROR: 401,

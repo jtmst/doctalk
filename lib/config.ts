@@ -1,5 +1,6 @@
 export const INGESTION_LIMITS = {
   maxFiles: 50,
+  maxFileSizeBytes: 10 * 1024 * 1024,
   maxAggregateSizeBytes: 30 * 1024 * 1024,
   estimatedWorkspaceFileSizeBytes: 100 * 1024, // Workspace files don't report size in Drive API
 } as const;

@@ -63,6 +63,13 @@ export async function ingestFolder(params: IngestParams): Promise<IngestResult> 
 
   for (const file of files) {
     try {
+      if (file.size !== null && file.size > INGESTION_LIMITS.maxFileSizeBytes) {
+        const sizeMB = Math.round(file.size / 1024 / 1024);
+        skipped++;
+        onProgress({ type: "file_skipped", fileName: file.name, reason: `File too large (${sizeMB}MB, limit is 10MB)` });
+        continue;
+      }
+
       const exportFormat = SUPPORTED_MIME_TYPES[file.mimeType as keyof typeof SUPPORTED_MIME_TYPES] as string | null | undefined;
       if (exportFormat === undefined) {
         skipped++;
