@@ -2,7 +2,7 @@ import { getNamespaceKey, getNamespaceInfo } from "@/lib/vectorstore";
 import { ingestFolder, type IngestionEvent } from "@/lib/ingestion";
 import { createDriveClient, getFolderName } from "@/lib/drive";
 import { DocTalkError, errorToStatus, safeErrorMessage } from "@/lib/errors";
-import { requireToken, parseJsonBody, validateFolderId } from "@/lib/api/helpers";
+import { requireToken, parseJsonBody, validateFolderId } from "@/lib/api";
 
 export async function POST(req: Request) {
   const tokenResult = await requireToken(req);

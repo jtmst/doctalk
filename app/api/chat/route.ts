@@ -4,7 +4,7 @@ import { retrieveContext, buildSystemPrompt } from "@/lib/rag";
 import { getChatModel } from "@/lib/chat";
 import { CHAT_LIMITS } from "@/lib/config";
 import { DocTalkError, errorToStatus, safeErrorMessage } from "@/lib/errors";
-import { requireToken, parseJsonBody, validateFolderId } from "@/lib/api/helpers";
+import { requireToken, parseJsonBody, validateFolderId } from "@/lib/api";
 
 interface ChatMessage {
   role: "user" | "assistant";
