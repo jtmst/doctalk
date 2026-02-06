@@ -6,7 +6,7 @@ export interface ChunkMetadata {
   chunkIndex: number;
   totalChunks: number;
   folderId: string;
-  pageNumber?: number;
+  pageNumbers?: number[];
 }
 
 export interface ChunkWithMetadata {

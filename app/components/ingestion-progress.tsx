@@ -7,8 +7,14 @@ import { Button } from "@/components/ui/button";
 
 interface IngestionProgressProps {
   folderId: string;
-  onComplete: (result: { filesProcessed: number; chunksCreated: number; folderName: string }) => void;
+  onComplete: (result: CompletionResult) => void;
   onError: (message: string) => void;
+}
+
+interface CompletionResult {
+  filesProcessed: number;
+  chunksCreated: number;
+  folderName: string;
 }
 
 interface ProgressState {
@@ -21,6 +27,7 @@ interface ProgressState {
   errors: { fileName: string; error: string }[];
   status: "connecting" | "ingesting" | "complete" | "error";
   errorMessage?: string;
+  completionResult?: CompletionResult;
 }
 
 export function IngestionProgress({
@@ -133,12 +140,15 @@ export function IngestionProgress({
           }));
           break;
         case "complete":
-          setState((s) => ({ ...s, status: "complete" }));
-          onComplete({
-            filesProcessed: event.filesProcessed,
-            chunksCreated: event.chunksCreated,
-            folderName: event.folderName,
-          });
+          setState((s) => ({
+            ...s,
+            status: "complete",
+            completionResult: {
+              filesProcessed: event.filesProcessed,
+              chunksCreated: event.chunksCreated,
+              folderName: event.folderName,
+            },
+          }));
           break;
         case "error":
           setState((s) => ({
@@ -155,10 +165,13 @@ export function IngestionProgress({
     return () => controller.abort();
   }, [folderId, onComplete, onError]);
 
+  const filesHandled = state.filesProcessed + state.skipped.length + state.errors.length;
   const progress =
-    state.totalFiles > 0
-      ? Math.round((state.filesProcessed / state.totalFiles) * 100)
-      : 0;
+    state.status === "complete"
+      ? 100
+      : state.totalFiles > 0
+        ? Math.round((filesHandled / state.totalFiles) * 100)
+        : 0;
 
   return (
     <div className="w-full max-w-md space-y-6">
@@ -166,7 +179,7 @@ export function IngestionProgress({
         <div className="flex items-center justify-between text-sm">
           <span className="text-muted-foreground">
             {state.status === "connecting" && "Connecting..."}
-            {state.status === "ingesting" && `Processing files (${state.filesProcessed}/${state.totalFiles})`}
+            {state.status === "ingesting" && `Processing files (${filesHandled}/${state.totalFiles})`}
             {state.status === "complete" && "Complete"}
             {state.status === "error" && "Error"}
           </span>
@@ -228,12 +241,20 @@ export function IngestionProgress({
         </div>
       )}
 
-      {state.status === "complete" && (
-        <div className="flex items-center gap-2 text-sm text-primary">
-          <CheckCircle2 className="size-4" />
-          <span>
-            Indexed {state.filesProcessed} files ({state.chunksCreated} chunks)
-          </span>
+      {state.status === "complete" && state.completionResult && (
+        <div className="space-y-4 animate-in fade-in duration-500">
+          <div className="flex items-center gap-2 text-sm text-primary">
+            <CheckCircle2 className="size-4" />
+            <span>
+              Indexed {state.completionResult.filesProcessed} files ({state.completionResult.chunksCreated} chunks)
+            </span>
+          </div>
+          <Button
+            className="w-full"
+            onClick={() => onComplete(state.completionResult!)}
+          >
+            Continue to Chat
+          </Button>
         </div>
       )}
 

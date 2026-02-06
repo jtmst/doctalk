@@ -32,7 +32,7 @@ export function ChatMessage({ message }: ChatMessageProps) {
   const streaming = isStreaming(message);
   const fileNames = !isUser && !streaming ? parseCitations(text) : [];
   const sources = (message.metadata as { sources?: SourceMeta[] } | undefined)?.sources ?? [];
-  const citations = fileNames.length > 0 ? mapCitationsToUrls(fileNames, sources) : [];
+  const citations = fileNames.length > 0 ? mapCitationsToUrls(fileNames, sources, text) : [];
   const displayText = fileNames.length > 0 ? stripCitationMarkers(text) : text;
 
   return (

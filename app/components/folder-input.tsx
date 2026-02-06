@@ -3,9 +3,10 @@
 import { useState, useEffect, useCallback } from "react";
 import { parseFolderUrl } from "@/lib/drive/url";
 import { RECENT_FOLDERS_MAX } from "@/lib/config";
-import { FolderOpen, Clock, Loader2, Trash2 } from "lucide-react";
+import { FolderOpen, Clock, Info, Loader2, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const STORAGE_KEY = "doctalk:recent-folders";
 const MAX_FOLDER_ID_LENGTH = 128;
@@ -158,8 +159,18 @@ export function FolderInput({
     <div className="w-full max-w-md space-y-6">
       <div className="space-y-2">
         <h2 className="text-lg font-medium">Paste a folder link</h2>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-sm text-muted-foreground inline-flex items-center gap-1.5">
           Share a Google Drive folder URL and chat with its contents.
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Info className="size-3.5 shrink-0 cursor-help" />
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Supported: PDF, Google Docs, Sheets, Slides, plain text, Markdown, CSV</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </p>
       </div>
 

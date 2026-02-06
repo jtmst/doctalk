@@ -17,22 +17,23 @@ function isSafeUrl(url: string): boolean {
   }
 }
 
-function buildUrl(citation: Citation): string | undefined {
-  if (!citation.fileUrl || !isSafeUrl(citation.fileUrl)) return undefined;
-  if (citation.mimeType === "application/pdf" && citation.pageNumber) {
-    return `${citation.fileUrl}#page=${citation.pageNumber}`;
-  }
-  return citation.fileUrl;
+function formatPages(pages: number[]): string {
+  if (pages.length === 0) return "";
+  if (pages.length === 1) return ` p.${pages[0]}`;
+  return ` p.${pages.join(", ")}`;
 }
 
 export function CitationLink({ citation }: CitationLinkProps) {
   const [expanded, setExpanded] = useState(false);
-  const url = buildUrl(citation);
+  const url = citation.fileUrl && isSafeUrl(citation.fileUrl) ? citation.fileUrl : undefined;
 
   const pill = (
     <span className="inline-flex items-center gap-1.5">
       <FileText className="size-3" />
-      <span>{citation.fileName}</span>
+      <span>
+        {citation.fileName}
+        {formatPages(citation.pageNumbers)}
+      </span>
       {citation.snippet && (
         <button
           type="button"
@@ -41,7 +42,7 @@ export function CitationLink({ citation }: CitationLinkProps) {
             e.stopPropagation();
             setExpanded((v) => !v);
           }}
-          className="inline-flex items-center"
+          className="inline-flex items-center cursor-pointer"
         >
           <ChevronDown
             className={`size-3 transition-transform ${expanded ? "rotate-180" : ""}`}

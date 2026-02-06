@@ -54,9 +54,7 @@ export default function Home() {
         timestamp: Date.now(),
         fileCount: result.filesProcessed,
       });
-      setTimeout(() => {
-        setAppState({ step: "chat", folderId, folderName });
-      }, 800);
+      setAppState({ step: "chat", folderId, folderName });
     },
     [],
   );

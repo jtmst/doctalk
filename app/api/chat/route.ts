@@ -91,7 +91,7 @@ export async function POST(req: Request) {
       fileUrl: c.metadata.fileUrl,
       mimeType: c.metadata.mimeType,
       text: c.text,
-      pageNumber: c.metadata.pageNumber,
+      pageNumbers: c.metadata.pageNumbers,
     }));
 
     const result = streamText({ model: getChatModel(), system, messages });

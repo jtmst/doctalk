@@ -2,10 +2,13 @@ import type { SearchResult } from "@/lib/vectorstore";
 
 export function buildSystemPrompt(chunks: SearchResult[]): string {
   const sourceBlocks = chunks
-    .map(
-      (chunk) =>
-        `--- ${chunk.metadata.fileName} ---\n${chunk.text}`,
-    )
+    .map((chunk) => {
+      const pages = chunk.metadata.pageNumbers;
+      const header = pages?.length
+        ? `--- ${chunk.metadata.fileName} (p.${pages.join(", ")}) ---`
+        : `--- ${chunk.metadata.fileName} ---`;
+      return `${header}\n${chunk.text}`;
+    })
     .join("\n\n");
 
   return `You are a helpful assistant that answers questions based on the provided source documents. Follow these rules strictly:

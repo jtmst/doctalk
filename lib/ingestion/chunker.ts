@@ -93,7 +93,7 @@ export class RecursiveTextSplitter {
 }
 
 type PageOffset = { pageNumber: number; startOffset: number };
-type DocumentMetadata = Omit<ChunkMetadata, "chunkIndex" | "totalChunks" | "pageNumber">;
+type DocumentMetadata = Omit<ChunkMetadata, "chunkIndex" | "totalChunks" | "pageNumbers">;
 
 interface ChunkOptions {
   splitter?: RecursiveTextSplitter;
@@ -112,14 +112,18 @@ export function chunkDocument(
   let searchFrom = 0;
 
   return chunks.map((chunk, index): ChunkWithMetadata => {
-    let pageNumber: number | undefined;
+    let pageNumbers: number[] | undefined;
 
     if (offsets && offsets.length > 0) {
       const prefix = chunk.slice(0, 100);
       const pos = text.indexOf(prefix, searchFrom);
       if (pos !== -1) {
         searchFrom = pos + 1;
-        pageNumber = lookupPage(offsets, pos);
+        const startPage = lookupPage(offsets, pos);
+        const endPage = lookupPage(offsets, Math.min(pos + chunk.length - 1, text.length - 1));
+        const pages: number[] = [];
+        for (let p = startPage; p <= endPage; p++) pages.push(p);
+        pageNumbers = pages;
       }
     }
 
@@ -134,7 +138,7 @@ export function chunkDocument(
         folderId: metadata.folderId,
         chunkIndex: index,
         totalChunks: chunks.length,
-        pageNumber,
+        pageNumbers,
       },
     };
   });
